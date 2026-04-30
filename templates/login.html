@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section id="view-auth" class="view active">
+    <div class="auth-container glass-panel">
+        <div class="auth-header">
+            <h2><ion-icon name="bus-outline"></ion-icon> Nexus Transit</h2>
+            <p>Your journey begins here.</p>
+        </div>
+
+        <div class="auth-tabs">
+            <button class="tab active">Login</button>
+            <a href="{{ url_for('register') }}" style="text-decoration: none;"><button class="tab">Sign Up</button></a>
+        </div>
+
+        <!-- Login Form -->
+        <form id="form-login" class="auth-form" method="POST" action="{{ url_for('login') }}">
+            <div class="input-group">
+                <label>Email ID</label>
+                <input type="email" name="email" required placeholder="name@example.com">
+            </div>
+            <div class="input-group">
+                <label>Password</label>
+                <div class="input-with-icon">
+                    <input type="password" name="password" id="login-pass" required placeholder="••••••••">
+                    <ion-icon name="eye-outline" class="password-toggle"
+                        onclick="window.togglePassword('login-pass', this)"></ion-icon>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary w-100 mt-3">Login to your account</button>
+        </form>
+    </div>
+</section>
+{% endblock %}

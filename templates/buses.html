@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section id="view-buses" class="view active">
+    <nav class="top-nav">
+        <button class="btn-ghost" onclick="window.location.href='{{ url_for('index') }}'"><ion-icon
+                name="arrow-back-outline"></ion-icon> Back</button>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <div class="logo"><ion-icon name="bus-outline"></ion-icon> Nexus</div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="list-header">
+            <h2 id="buses-route-title">{{ search.source }} to {{ search.destination }}</h2>
+            <p id="buses-date-title">{{ search.date }}</p>
+        </div>
+
+        <div class="bus-list" id="bus-list-container">
+            {% if routes %}
+                {% for route in routes %}
+                <div class="bus-card">
+                    <div>
+                        <div class="bus-company">{{ route.bus.company }}</div>
+                        <div class="bus-type">{{ route.bus.type }}</div>
+                    </div>
+                    <div class="bus-times">
+                        <div class="time-col">
+                            <strong>{{ route.departure_time }}</strong>
+                            <span>{{ route.source }}</span>
+                        </div>
+                        <div class="duration">{{ route.duration }}</div>
+                        <div class="time-col">
+                            <strong>{{ route.arrival_time }}</strong>
+                            <span>{{ route.destination }}</span>
+                        </div>
+                    </div>
+                    <div class="bus-price">₹{{ route.bus.price }}</div>
+                    <button class="btn-primary" onclick="window.location.href='{{ url_for('seats', route_id=route.id) }}'">Select Seats</button>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-center text-muted">No buses found for this route.</p>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

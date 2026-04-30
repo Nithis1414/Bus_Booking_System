@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Bus Transit</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='images/bus_logo.jpg') }}">
+    <link rel="shortcut icon" type="image/jpeg" href="{{ url_for('static', filename='images/bus_logo.jpg') }}">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <!-- Razorpay library -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    {% block head %}{% endblock %}
+</head>
+
+<body>
+
+    <div id="app">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                {% for category, message in messages %}
+                    window.showToast("{{ message }}", "{{ 'success' if category == 'success' else 'error' }}");
+                {% endfor %}
+            });
+        </script>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Notifications Panel -->
+    <div id="notifications-panel" class="notifications-panel d-none glass-panel">
+        <div class="flex-between mb-3">
+            <h3>Notifications</h3>
+            <button class="btn-ghost" onclick="window.toggleNotifications()"><ion-icon
+                    name="close-outline"></ion-icon></button>
+        </div>
+        <div id="notifications-list" class="notifications-list">
+            <!-- Notifications go here -->
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

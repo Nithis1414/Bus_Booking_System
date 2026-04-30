@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section id="view-search" class="view active">
+    <nav class="top-nav">
+        <div class="logo"><ion-icon name="bus-outline"></ion-icon> Nexus</div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            {% if current_user.is_authenticated %}
+                <button class="btn-ghost" onclick="window.location.href='{{ url_for('dashboard') }}'">Dashboard</button>
+                <button class="btn-ghost" onclick="window.location.href='{{ url_for('logout') }}'">Logout</button>
+            {% else %}
+                <button class="btn-ghost" onclick="window.location.href='{{ url_for('login') }}'">Login / Sign Up</button>
+            {% endif %}
+        </div>
+    </nav>
+    <div class="hero">
+        <h1>Where will you go next?</h1>
+        <p>Book premium bus experiences across the country.</p>
+
+        <form class="search-box glass-panel" method="POST" action="{{ url_for('search') }}">
+            <div class="search-fields">
+                <div class="input-group">
+                    <label>From</label>
+                    <input type="text" name="source" id="search-source" required placeholder="City or Station" value="{{ session.search.source if session.search else '' }}">
+                </div>
+                <div class="icon-swap" onclick="swapLocations()" title="Swap Locations">
+                    <ion-icon name="swap-horizontal-outline"></ion-icon>
+                </div>
+                <div class="input-group">
+                    <label>To</label>
+                    <input type="text" name="destination" id="search-destination" required placeholder="City or Station" value="{{ session.search.destination if session.search else '' }}">
+                </div>
+            </div>
+            <div class="search-date-section mt-3">
+                <div class="input-group">
+                    <label>Date of Journey</label>
+                    <div class="input-with-icon date-picker">
+                        <ion-icon name="calendar-outline" class="date-field-icon" title="Open calendar" onclick="document.getElementById('search-date').focus()"></ion-icon>
+                        <input type="date" name="date" id="search-date" required value="{{ session.search.date if session.search else '' }}">
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary btn-large w-100 mt-2">Search Buses</button>
+        </form>
+    </div>
+</section>
+
+<script>
+function swapLocations() {
+    const sourceInput = document.getElementById('search-source');
+    const destInput = document.getElementById('search-destination');
+    
+    // Swap the values
+    const temp = sourceInput.value;
+    sourceInput.value = destInput.value;
+    destInput.value = temp;
+    
+    // Add a quick animation class to the icon
+    const icon = document.querySelector('.icon-swap ion-icon');
+    icon.style.transform = 'rotate(180deg)';
+    icon.style.transition = 'transform 0.3s ease';
+    
+    setTimeout(() => {
+        icon.style.transform = 'none';
+        icon.style.transition = 'none';
+    }, 300);
+}
+</script>
+{% endblock %}

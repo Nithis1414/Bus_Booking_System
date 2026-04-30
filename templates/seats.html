@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- SEAT SELECTION VIEW -->
+<section id="view-seats" class="view active">
+    <nav class="top-nav">
+        <button class="btn-ghost" onclick="window.history.back()"><ion-icon name="arrow-back-outline"></ion-icon>
+            Back</button>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <div class="logo">Seat Selection</div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 layout-grid">
+        <!-- Bus Layout -->
+        <div class="bus-layout glass-panel">
+            <div class="front-of-bus">
+                <div class="steering"><ion-icon name="stop-circle-outline"></ion-icon> Driver</div>
+            </div>
+            <div class="seats-container" id="seats-grid">
+                <!-- Populated via JS based on route data -->
+            </div>
+            <div class="legend mt-3" style="display:flex; flex-wrap:wrap; gap:1rem;">
+                <div class="legend-item">
+                    <div class="seat-badge available"></div> Available
+                </div>
+                <div class="legend-item">
+                    <div class="seat-badge selected"></div> Selected
+                </div>
+                <div class="legend-item">
+                    <div class="seat-badge booked"></div> Booked
+                </div>
+                <div class="legend-item">
+                    <div class="seat-badge booked-m"></div> Booked (M)
+                </div>
+                <div class="legend-item">
+                    <div class="seat-badge booked-f"></div> Booked (F)
+                </div>
+            </div>
+        </div>
+
+        <!-- Price Calculator -->
+        <div class="summary-panel glass-panel h-fit">
+            <h3>Booking Summary</h3>
+            <div class="summary-details mt-2">
+                <p><strong><span id="summary-bus-name">{{ route.bus.company }}</span></strong></p>
+                <p>Route: <span id="summary-route">{{ route.source }} -> {{ route.destination }}</span></p>
+                <p class="mt-2 text-muted">Selected Seats:</p>
+                <h4 id="summary-seats-list" class="color-accent">None</h4>
+                <hr class="separator">
+                <div class="flex-between">
+                    <span>Total Price</span>
+                    <h2 class="price-total">₹<span id="summary-total-price">0</span></h2>
+                </div>
+            </div>
+            <button class="btn-primary w-100 mt-3" id="btn-proceed-passenger" onclick="window.proceedToCheckout()"
+                disabled>Proceed to Details</button>
+        </div>
+    </div>
+</section>
+
+<!-- PASSENGER & PAYMENT VIEW -->
+<section id="view-checkout" class="view">
+    <nav class="top-nav">
+        <button class="btn-ghost" onclick="window.backToSeats()"><ion-icon name="arrow-back-outline"></ion-icon>
+            Back</button>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <div class="logo">Checkout</div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 layout-grid">
+        <div class="left-col" style="margin: 0 auto; max-width: 600px; width: 100%;">
+            <form id="form-checkout" class="glass-panel" onsubmit="event.preventDefault(); window.payWithRazorpay();">
+                <h3>Contact Details</h3>
+                <p class="text-muted mb-2">Primary contact for this booking.</p>
+
+                <div class="input-grid mb-3">
+                    <div class="input-group">
+                        <label>Contact Number</label>
+                        <input type="tel" id="pass-phone" required placeholder="+91 98765 43210">
+                    </div>
+                    <div class="input-group">
+                        <label>Email ID</label>
+                        <input type="email" id="pass-email" required placeholder="user@gmail.com"
+                            value="{{ current_user.email if current_user.is_authenticated else '' }}">
+                    </div>
+                </div>
+
+                <hr class="separator">
+
+                <h3>Passenger Details</h3>
+                <p class="text-muted mb-2">Details for all selected seats.</p>
+
+                <div id="passenger-forms-container">
+                    <!-- Populated via JS based on selectedSeats -->
+                </div>
+
+                <hr class="separator">
+
+                <button type="submit" class="btn-primary btn-large w-100 mt-4 flash-btn" id="pay-btn">Pay ₹<span
+                        id="checkout-total">0</span> & Book Ticket</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Embed python variables to JS
+    window.routeData = {
+        id: parseInt("{{ route.id }}", 10),
+        price: parseFloat("{{ route.bus.price }}"),
+        type: "{{ route.bus.type }}"
+    };
+    window.bookedSeats = JSON.parse('{{ booked_seats | tojson | safe }}');</script>
+{% endblock %}

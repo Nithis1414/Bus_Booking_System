@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section id="view-ticket" class="view active">
+    <div class="container flex-center fullscreen-center">
+        <div class="ticket-wrapper glass-panel">
+            <div class="ticket-header">
+                {% if booking.payment_status == 'Paid' %}
+                <div class="success-icon"><ion-icon name="checkmark-circle"></ion-icon></div>
+                <h2>Booking Confirmed!</h2>
+                <p>Your e-ticket has been sent to {{ booking.contact_email }}.</p>
+                {% else %}
+                <div class="success-icon" style="color: var(--error)"><ion-icon name="warning"></ion-icon></div>
+                <h2>Payment {{ booking.payment_status }}</h2>
+                <p>Please contact support if amount was deducted.</p>
+                {% endif %}
+            </div>
+
+            <div class="ticket-body mt-3">
+                <div class="t-row">
+                    <div class="t-col">
+                        <span class="t-label">PNR Number</span>
+                        <strong class="t-val" id="ticket-pnr">{{ booking.pnr }}</strong>
+                    </div>
+                    <div class="t-col text-right">
+                        <span class="t-label">Date</span>
+                        <strong class="t-val" id="ticket-date">{{ booking.route.date }}</strong>
+                    </div>
+                </div>
+
+                <div class="ticket-route mt-3">
+                    <div class="t-city" id="ticket-src">{{ booking.route.source[:3]|upper }}</div>
+                    <div class="t-arrow"><ion-icon name="bus"></ion-icon></div>
+                    <div class="t-city" id="ticket-dst">{{ booking.route.destination[:3]|upper }}</div>
+                </div>
+
+                <div class="t-row mt-3">
+                    <div class="t-col">
+                        <span class="t-label">Passenger(s)</span>
+                        <strong class="t-val" id="ticket-name">
+                            {% for p in booking.passengers %}
+                                {{ p.name }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </strong>
+                    </div>
+                    <div class="t-col text-right">
+                        <span class="t-label">Contact</span>
+                        <strong class="t-val" id="ticket-phone">{{ booking.contact_phone }}</strong>
+                    </div>
+                </div>
+
+                <div class="t-row mt-2">
+                    <div class="t-col">
+                        <span class="t-label">Bus Operator</span>
+                        <strong class="t-val" id="ticket-bus-name" style="font-size: 1.5rem; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px;">{{ booking.route.bus.company }}</strong>
+                    </div>
+                    <div class="t-col text-right">
+                        <span class="t-label">Seat(s)</span>
+                        <strong class="t-val color-accent" id="ticket-seats">
+                            {% for p in booking.passengers %}
+                                {{ p.seat_number }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </strong>
+                    </div>
+                </div>
+
+                <div class="t-row mt-2 total-row">
+                    <div class="t-col"><span class="t-label">Amount Paid</span></div>
+                    <div class="t-col text-right"><strong class="t-val" id="ticket-amount">₹{{ booking.total_amount }}</strong></div>
+                </div>
+            </div>
+
+            <div class="ticket-footer mt-3 space-y">
+                <button class="btn-outline w-100" onclick="window.print()"><ion-icon
+                        name="print-outline"></ion-icon> Print Ticket</button>
+                <button class="btn-outline w-100" onclick="window.location.href='{{ url_for('dashboard') }}'">View Dashboard</button>
+                <button class="btn-primary w-100" onclick="window.location.href='{{ url_for('index') }}'">Book Another Journey</button>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
