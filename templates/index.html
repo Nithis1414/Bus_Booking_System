@@ -5,6 +5,7 @@
     <nav class="top-nav">
         <div class="logo"><ion-icon name="bus-outline"></ion-icon> Nexus</div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn-ghost" onclick="window.location.href='{{ url_for('contact') }}'">Contact</button>
             {% if current_user.is_authenticated %}
                 <button class="btn-ghost" onclick="window.location.href='{{ url_for('dashboard') }}'">Dashboard</button>
                 <button class="btn-ghost" onclick="window.location.href='{{ url_for('logout') }}'">Logout</button>

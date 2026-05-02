@@ -220,7 +220,11 @@ function renderPassengerForms() {
 window.payWithRazorpay = async function() {
     const phone = document.getElementById('pass-phone').value.trim();
     const email = document.getElementById('pass-email').value.trim();
+    const pickupPoint = document.getElementById('pickup-point') ? document.getElementById('pickup-point').value : null;
+    const dropPoint = document.getElementById('drop-point') ? document.getElementById('drop-point').value : null;
+    
     if (!phone || !email) return showToast("Fill all contact details.");
+    if (!pickupPoint || !dropPoint) return showToast("Select boarding and dropping points.");
 
     const passengers = [];
     let isValid = true;
@@ -259,7 +263,9 @@ window.payWithRazorpay = async function() {
                 seats: state.selectedSeats,
                 passengers: passengers,
                 contact_phone: phone,
-                contact_email: email
+                contact_email: email,
+                pickup_point: pickupPoint,
+                drop_point: dropPoint
             })
         });
         

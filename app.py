@@ -9,6 +9,59 @@ from models import db, User, Bus, Route, Booking, Passenger
 import os
 import razorpay
 from razorpay.errors import SignatureVerificationError
+import datetime
+
+
+POPULAR_POINTS = {
+    'Ariyalur': [('Bus Stand', 0), ('Railway Station', 15), ('Sendurai Road', 30)],
+    'Chengalpattu': [('New Bus Stand', 0), ('Railway Station', 10), ('GST Road', 20)],
+    'Chennai': [('Koyambedu (CMBT)', 0), ('Egmore', 20), ('Guindy', 40), ('Tambaram', 75), ('Perungalathur', 90)],
+    'Coimbatore': [('Gandhipuram', 0), ('Omni Bus Stand', 15), ('Hope College', 30), ('Singanallur', 45), ('Ukkadam', 60)],
+    'Cuddalore': [('Bus Stand', 0), ('OT', 15), ('Manjakuppam', 25)],
+    'Dharmapuri': [('Bus Stand', 0), ('Four Roads', 15), ('Collectorate', 25)],
+    'Dindigul': [('Bus Stand', 0), ('Palani Road', 15), ('Railway Station', 25)],
+    'Erode': [('Central Bus Stand', 0), ('Sathyamangalam Road', 20), ('Railway Station', 35)],
+    'Kallakurichi': [('Bus Stand', 0), ('Kachirapalayam Road', 20)],
+    'Kancheepuram': [('Bus Stand', 0), ('Collectorate', 15), ('Temple View', 30)],
+    'Kanyakumari': [('Nagercoil Bus Stand', 0), ('Kanyakumari Stand', 45), ('Vivekananda Rock View', 60)],
+    'Karur': [('Bus Stand', 0), ('Gandhigramam', 15), ('Pugalur Road', 30)],
+    'Krishnagiri': [('Bus Stand', 0), ('Rayakottai Road', 15), ('Roundana', 25)],
+    'Madurai': [('Mattuthavani', 0), ('Arapalayam', 20), ('Periyar', 35), ('Kalavasal', 50)],
+    'Mayiladuthurai': [('Bus Stand', 0), ('Koranad', 15), ('Railway Station', 25)],
+    'Nagapattinam': [('Bus Stand', 0), ('Public Office', 15), ('Velankanni Road', 45)],
+    'Namakkal': [('Bus Stand', 0), ('Salem Road', 15), ('Paramathi Road', 30)],
+    'Nilgiris': [('Ooty Bus Stand', 0), ('Charring Cross', 10), ('Coonoor Bus Stand', 60)],
+    'Perambalur': [('Bus Stand', 0), ('New Colony', 20)],
+    'Pudukkottai': [('Bus Stand', 0), ('Old Bus Stand', 15), ('Alangudi Road', 30)],
+    'Ramanathapuram': [('Bus Stand', 0), ('Railway Station', 15), ('Kenikarai', 25)],
+    'Ranipet': [('Bus Stand', 0), ('Arcot Road', 15), ('Wallajah Road', 30)],
+    'Salem': [('New Bus Stand', 0), ('AVR Circle', 15), ('Kondalampatti', 30), ('Old Bus Stand', 45)],
+    'Sivaganga': [('Bus Stand', 0), ('Railway Station', 15)],
+    'Tenkasi': [('Bus Stand', 0), ('Railway Station', 15), ('Courtallam Road', 30)],
+    'Thanjavur': [('New Bus Stand', 0), ('Old Bus Stand', 20), ('Palli Agraharam', 40)],
+    'Theni': [('Bus Stand', 0), ('Theni Junction', 15), ('Cumbum Road', 40)],
+    'Thoothukudi': [('New Bus Stand', 0), ('Old Bus Stand', 20), ('VVD Signal', 40)],
+    'Tiruchirappalli': [('Central Bus Stand', 0), ('Chathiram', 20), ('Srirangam', 40), ('No.1 Tollgate', 60)],
+    'Tirunelveli': [('New Bus Stand (VNR)', 0), ('Palayamkottai', 20), ('Junction', 40)],
+    'Tirupathur': [('Bus Stand', 0), ('Collector Office', 20)],
+    'Tiruppur': [('New Bus Stand', 0), ('Old Bus Stand', 20), ('Avinashi Road', 40)],
+    'Tiruvallur': [('Bus Stand', 0), ('Railway Station', 20)],
+    'Tiruvannamalai': [('Bus Stand', 0), ('Temple Entry', 15), ('Girivalam Path', 45)],
+    'Tiruvarur': [('Bus Stand', 0), ('Railway Station', 20)],
+    'Vellore': [('New Bus Stand', 0), ('Green Circle', 15), ('Katpadi', 40)],
+    'Viluppuram': [('New Bus Stand', 0), ('Four Roads', 15), ('Collectorate', 30)],
+    'Virudhunagar': [('Bus Stand', 0), ('Railway Station', 20)],
+    'Bengaluru': [('Majestic', 0), ('Kalasipalya', 15), ('Madiwala', 45), ('Silk Board', 60), ('Electronic City', 90)],
+    'Hyderabad': [('MGBS', 0), ('Ameerpet', 30), ('Jubilee Bus Station', 60), ('Gachibowli', 90), ('Miyapur', 120)]
+}
+
+def calculate_point_time(base_time_str, offset_minutes):
+    try:
+        t = datetime.datetime.strptime(base_time_str, "%I:%M %p")
+        new_t = t + datetime.timedelta(minutes=offset_minutes)
+        return new_t.strftime("%I:%M %p")
+    except:
+        return base_time_str
 
 
 load_dotenv()
@@ -145,7 +198,21 @@ def seats(route_id):
         for p in b.passengers:
             booked_seats[p.seat_number] = p.gender
             
-    return render_template('seats.html', route=route, booked_seats=booked_seats)
+    # Calculate specific times for each point
+    source_points = POPULAR_POINTS.get(route.source, [('Main Bus Stand', 0)])
+    dest_points = POPULAR_POINTS.get(route.destination, [('Main Bus Stand', 0)])
+    
+    pickup_points = [
+        {'name': p[0], 'time': calculate_point_time(route.departure_time, p[1])}
+        for p in source_points
+    ]
+    drop_points = [
+        {'name': p[0], 'time': calculate_point_time(route.arrival_time, p[1])}
+        for p in dest_points
+    ]
+            
+    return render_template('seats.html', route=route, booked_seats=booked_seats, 
+                           pickup_points=pickup_points, drop_points=drop_points)
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
@@ -157,6 +224,8 @@ def checkout():
         passengers = data.get('passengers') # list of dicts: {seatId, name, gender}
         contact_phone = data.get('contact_phone')
         contact_email = data.get('contact_email')
+        pickup_point = data.get('pickup_point')
+        drop_point = data.get('drop_point')
         
         route = Route.query.get(route_id)
         if not route:
@@ -176,7 +245,11 @@ def checkout():
         try:
             razorpay_order = razorpay_client.order.create(data=order_data)
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            print(f"Razorpay Connection Error: {str(e)}")
+            return jsonify({
+                'success': False, 
+                'error': 'Payment Gateway Connection Failed. Please check your internet connection and try again.'
+            }), 500
             
         # Create pending booking
         booking = Booking(
@@ -185,6 +258,8 @@ def checkout():
             route_id=route.id,
             contact_phone=contact_phone,
             contact_email=contact_email,
+            pickup_point=pickup_point,
+            drop_point=drop_point,
             total_amount=amount,
             razorpay_order_id=razorpay_order['id'],
             payment_status='Pending'
@@ -256,6 +331,10 @@ def confirmation(pnr):
 def dashboard():
     bookings = Booking.query.filter_by(user_id=current_user.id).order_by(Booking.created_at.desc()).all()
     return render_template('dashboard.html', bookings=bookings)
+
+@app.route('/contact')
+def contact():
+    return render_template('contact.html')
 
 # Helper to populate DB
 @app.route('/seed')
@@ -344,16 +423,16 @@ def seed_db():
 
     def create_route(src, dst, date_str, dep_time):
         straight_dist = get_distance(src, dst)
-        # Use a multiplier of 1.4 for road distance and 38 km/h for realistic TN bus speeds
-        road_distance = straight_dist * 1.4
+        # Use a multiplier of 1.3 for road distance and 65 km/h for realistic TN bus speeds
+        road_distance = straight_dist * 1.3
         
         bus_name = random.choice(travel_companies)
         b_type, rate = random.choice(bus_types)
         
         price = int(300 + (road_distance * rate))
         
-        # Calculate duration based on road distance and 38 km/h average speed
-        duration_hours = road_distance / 38
+        # Calculate duration based on road distance and 65 km/h average speed
+        duration_hours = road_distance / 65
         h = int(duration_hours)
         m = int((duration_hours - h) * 60)
         dur_str = f"{h}h {m}m"
@@ -375,7 +454,7 @@ def seed_db():
         for district in tn_districts:
             for date_str in date_options:
                 # 3 Morning + 1 Afternoon + 2 Night = 6 buses
-                all_times = random.sample(morning_times, 3) + [random.choice(afternoon_times)] + random.sample(night_times, 2)
+                all_times = random.sample(morning_times, 3) + [random.choice(afternoon_times)] + random.sample(night_times, 4)
                 for t in all_times:
                     routes.append(create_route(district, city, date_str, t))
                     # Bi-directional

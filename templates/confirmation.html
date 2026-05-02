@@ -64,9 +64,39 @@
                     </div>
                 </div>
 
+                <div class="t-row mt-2">
+                    <div class="t-col">
+                        <span class="t-label">Boarding Point</span>
+                        <strong class="t-val" style="font-size: 0.95rem;">{{ booking.pickup_point }}</strong>
+                    </div>
+                    <div class="t-col text-right">
+                        <span class="t-label">Dropping Point</span>
+                        <strong class="t-val" style="font-size: 0.95rem;">{{ booking.drop_point }}</strong>
+                    </div>
+                </div>
+
                 <div class="t-row mt-2 total-row">
                     <div class="t-col"><span class="t-label">Amount Paid</span></div>
                     <div class="t-col text-right"><strong class="t-val" id="ticket-amount">₹{{ booking.total_amount }}</strong></div>
+                </div>
+
+                <div class="instructions-section mt-4">
+                    <div style="border: 1px dashed rgba(255,255,255,0.2); padding: 1rem; border-radius: 8px; background: rgba(255,255,255,0.02);">
+                        <span class="t-label" style="display: block; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.25rem; font-weight: 700; color: var(--accent);">Travel Guidelines</span>
+                        <ul style="font-size: 0.7rem; color: var(--text-secondary); padding-left: 1.2rem; list-style-type: disc; margin-bottom: 0.75rem;">
+                            <li>Carry this e-ticket (digital/print) and a <strong>Government Photo ID</strong>.</li>
+                            <li>Reporting Time: <strong>30 minutes</strong> before departure at {{ booking.pickup_point }}.</li>
+                            <li>The bus will not wait for late passengers; no refunds for missed journeys.</li>
+                            <li>Consumption of alcohol/tobacco is strictly prohibited inside the bus.</li>
+                        </ul>
+                        
+                        <span class="t-label" style="display: block; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.25rem; font-weight: 700; color: var(--accent);">Nexus Transit Terms</span>
+                        <ul style="font-size: 0.7rem; color: var(--text-secondary); padding-left: 1.2rem; list-style-type: disc;">
+                            <li>Cancellation: Up to 12 hours before departure (20% fee applies).</li>
+                            <li>Nexus Transit is a booking platform; service quality is the operator's responsibility.</li>
+                            <li>Contact Support: <strong>1800-123-4567</strong> (24/7 Toll-Free).</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
 

@@ -2,3 +2,13 @@
 __pycache__/
 *.pyc
 .idea/
+instance/
+*.db
+registrations.txt
+seed_small.py
+full_seed.py
+.vscode/
+node_modules/
+dist/
+build/
+*.log

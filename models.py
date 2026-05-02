@@ -37,6 +37,8 @@ class Booking(db.Model):
     route_id = db.Column(db.Integer, db.ForeignKey('route.id'), nullable=False)
     contact_phone = db.Column(db.String(20), nullable=False)
     contact_email = db.Column(db.String(100), nullable=False)
+    pickup_point = db.Column(db.String(100), nullable=False)
+    drop_point = db.Column(db.String(100), nullable=False)
     total_amount = db.Column(db.Float, nullable=False)
     payment_status = db.Column(db.String(20), default='Pending') # Pending, Paid, Failed
     razorpay_order_id = db.Column(db.String(100), nullable=True)

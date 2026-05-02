@@ -88,6 +88,51 @@
                 </div>
 
                 <hr class="separator">
+                
+                <h3>Boarding & Dropping Points</h3>
+                <p class="text-muted mb-2">Select your preferred location.</p>
+                
+                <div class="input-grid mb-3">
+                    <div class="input-group">
+                        <label>Pickup Point ({{ route.source }})</label>
+                        <div class="custom-dropdown" id="pickup-dropdown-container">
+                            <div class="dropdown-selected" onclick="this.classList.toggle('open')" id="pickup-selected-text">
+                                <span>Select Pickup Point</span>
+                                <ion-icon name="chevron-down-outline"></ion-icon>
+                            </div>
+                            <div class="dropdown-options">
+                                {% for point in pickup_points %}
+                                <div class="dropdown-option" onclick="window.selectPoint('pickup', '{{ point.name }}', '{{ point.time }}')">
+                                    <span class="opt-name">{{ point.name }}</span>
+                                    <span class="opt-time">Dep: {{ point.time }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <input type="hidden" id="pickup-point" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label>Dropping Point ({{ route.destination }})</label>
+                        <div class="custom-dropdown" id="drop-dropdown-container">
+                            <div class="dropdown-selected" onclick="this.classList.toggle('open')" id="drop-selected-text">
+                                <span>Select Dropping Point</span>
+                                <ion-icon name="chevron-down-outline"></ion-icon>
+                            </div>
+                            <div class="dropdown-options">
+                                {% for point in drop_points %}
+                                <div class="dropdown-option" onclick="window.selectPoint('drop', '{{ point.name }}', '{{ point.time }}')">
+                                    <span class="opt-name">{{ point.name }}</span>
+                                    <span class="opt-time">Arr: {{ point.time }}</span>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <input type="hidden" id="drop-point" required>
+                    </div>
+                </div>
+
+                <hr class="separator">
 
                 <h3>Passenger Details</h3>
                 <p class="text-muted mb-2">Details for all selected seats.</p>
@@ -114,5 +159,24 @@
         price: parseFloat("{{ route.bus.price }}"),
         type: "{{ route.bus.type }}"
     };
-    window.bookedSeats = JSON.parse('{{ booked_seats | tojson | safe }}');</script>
+    window.bookedSeats = JSON.parse('{{ booked_seats | tojson | safe }}');
+
+    window.selectPoint = function(type, value, time) {
+        // Update hidden input
+        const input = document.getElementById(`${type}-point`);
+        input.value = value;
+
+        // Update UI
+        const selectedText = document.getElementById(`${type}-selected-text`);
+        selectedText.innerHTML = `<span>${value} (${time})</span> <ion-icon name="chevron-down-outline"></ion-icon>`;
+        selectedText.classList.remove('open');
+    };
+
+    // Close dropdowns when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.custom-dropdown')) {
+            document.querySelectorAll('.dropdown-selected').forEach(el => el.classList.remove('open'));
+        }
+    });
+</script>
 {% endblock %}
