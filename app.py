@@ -45,6 +45,7 @@ def generate_pnr():
 # ==================== ROUTES ====================
 
 @app.route('/')
+@login_required
 def index():
     return render_template('index.html')
 
@@ -91,6 +92,7 @@ def logout():
     return redirect(url_for('index'))
 
 @app.route('/search', methods=['GET', 'POST'])
+@login_required
 def search():
     if request.method == 'POST':
         source = request.form.get('source', '').strip()
@@ -127,6 +129,7 @@ def search():
 
 
 @app.route('/bus/<int:route_id>/seats')
+@login_required
 def seats(route_id):
     route = Route.query.get_or_404(route_id)
     # Get already booked seats for this route

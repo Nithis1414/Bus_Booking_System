@@ -21,49 +21,131 @@
             <div class="search-fields">
                 <div class="input-group">
                     <label>From</label>
-                    <input type="text" name="source" id="search-source" required placeholder="City or Station" value="{{ session.search.source if session.search else '' }}">
+                    <div class="input-with-icon">
+                        <ion-icon name="bus-outline" class="input-icon"></ion-icon>
+                        <input type="text" name="source" id="search-source" required placeholder="City or Station" value="{{ session.search.source if session.search else '' }}" autocomplete="off">
+                        <ul class="autocomplete-list d-none" id="source-suggestions"></ul>
+                    </div>
                 </div>
-                <div class="icon-swap" onclick="swapLocations()" title="Swap Locations">
-                    <ion-icon name="swap-horizontal-outline"></ion-icon>
+                <div class="icon-swap-container">
+                    <button type="button" class="icon-swap" onclick="swapLocations()" title="Swap Locations">
+                        <ion-icon name="swap-horizontal-outline"></ion-icon>
+                    </button>
                 </div>
                 <div class="input-group">
                     <label>To</label>
-                    <input type="text" name="destination" id="search-destination" required placeholder="City or Station" value="{{ session.search.destination if session.search else '' }}">
+                    <div class="input-with-icon">
+                        <ion-icon name="location-outline" class="input-icon"></ion-icon>
+                        <input type="text" name="destination" id="search-destination" required placeholder="City or Station" value="{{ session.search.destination if session.search else '' }}" autocomplete="off">
+                        <ul class="autocomplete-list d-none" id="dest-suggestions"></ul>
+                    </div>
                 </div>
             </div>
             <div class="search-date-section mt-3">
                 <div class="input-group">
                     <label>Date of Journey</label>
                     <div class="input-with-icon date-picker">
-                        <ion-icon name="calendar-outline" class="date-field-icon" title="Open calendar" onclick="document.getElementById('search-date').focus()"></ion-icon>
+                        <ion-icon name="calendar-outline" class="date-field-icon input-icon" title="Open calendar" onclick="document.getElementById('search-date').showPicker ? document.getElementById('search-date').showPicker() : document.getElementById('search-date').focus()"></ion-icon>
                         <input type="date" name="date" id="search-date" required value="{{ session.search.date if session.search else '' }}">
                     </div>
                 </div>
             </div>
-            <button type="submit" class="btn-primary btn-large w-100 mt-2">Search Buses</button>
+            <button type="submit" class="btn-primary btn-large w-100 mt-2">
+                <span>Search Buses</span>
+                <ion-icon name="arrow-forward-outline"></ion-icon>
+            </button>
         </form>
     </div>
 </section>
 
 <script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Set minimum date to today
+    const dateInput = document.getElementById('search-date');
+    if (dateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.setAttribute('min', today);
+        if (!dateInput.value) dateInput.value = today;
+    }
+});
+
 function swapLocations() {
     const sourceInput = document.getElementById('search-source');
     const destInput = document.getElementById('search-destination');
-    
-    // Swap the values
-    const temp = sourceInput.value;
-    sourceInput.value = destInput.value;
-    destInput.value = temp;
-    
-    // Add a quick animation class to the icon
     const icon = document.querySelector('.icon-swap ion-icon');
+    
+    // Add animation classes
+    sourceInput.style.transform = 'translateX(20px)';
+    sourceInput.style.opacity = '0';
+    destInput.style.transform = 'translateX(-20px)';
+    destInput.style.opacity = '0';
     icon.style.transform = 'rotate(180deg)';
-    icon.style.transition = 'transform 0.3s ease';
     
     setTimeout(() => {
+        // Swap values
+        const temp = sourceInput.value;
+        sourceInput.value = destInput.value;
+        destInput.value = temp;
+        
+        // Reset animations
+        sourceInput.style.transform = 'translateX(0)';
+        sourceInput.style.opacity = '1';
+        destInput.style.transform = 'translateX(0)';
+        destInput.style.opacity = '1';
         icon.style.transform = 'none';
-        icon.style.transition = 'none';
     }, 300);
 }
+
+// Autocomplete Logic
+const cities = [
+    'Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem', 'Tirunelveli', 'Tiruppur', 'Erode', 
+    'Vellore', 'Thoothukudi', 'Dindigul', 'Thanjavur', 'Ranipet', 'Sivaganga', 'Virudhunagar', 
+    'Theni', 'Tenkasi', 'Kanyakumari', 'Pudukkottai', 'Nagapattinam', 'Namakkal', 'Karur', 
+    'Perambalur', 'Ariyalur', 'Cuddalore', 'Viluppuram', 'Kallakurichi', 'Tiruvannamalai', 
+    'Kancheepuram', 'Chengalpattu', 'Tiruvallur', 'Dharmapuri', 'Krishnagiri', 'Tirupathur', 
+    'Nilgiris', 'Mayiladuthurai', 'Tiruvarur', 'Bengaluru', 'Hyderabad'
+];
+
+function setupAutocomplete(inputId, listId) {
+    const input = document.getElementById(inputId);
+    const list = document.getElementById(listId);
+
+    input.addEventListener('input', () => {
+        const val = input.value.toLowerCase();
+        list.innerHTML = '';
+        if (!val) {
+            list.classList.add('d-none');
+            return;
+        }
+
+        const filtered = cities.filter(city => city.toLowerCase().includes(val)).slice(0, 6);
+        
+        if (filtered.length > 0) {
+            filtered.forEach(city => {
+                const li = document.createElement('li');
+                li.className = 'autocomplete-item';
+                li.innerHTML = `<ion-icon name="location-outline"></ion-icon><span>${city}</span>`;
+                li.onclick = () => {
+                    input.value = city;
+                    list.classList.add('d-none');
+                };
+                list.appendChild(li);
+            });
+            list.classList.remove('d-none');
+        } else {
+            list.classList.add('d-none');
+        }
+    });
+
+    // Close list when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!input.contains(e.target) && !list.contains(e.target)) {
+            list.classList.add('d-none');
+        }
+    });
+}
+
+setupAutocomplete('search-source', 'source-suggestions');
+setupAutocomplete('search-destination', 'dest-suggestions');
 </script>
 {% endblock %}
