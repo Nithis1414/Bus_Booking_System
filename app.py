@@ -11,7 +11,8 @@ import razorpay
 from razorpay.errors import SignatureVerificationError
 import datetime
 
-
+# Regional Hubs and Popular Points with Time Offsets (in minutes)
+# Used for calculating specific arrival/departure times at various boarding/dropping locations.
 POPULAR_POINTS = {
     'Ariyalur': [('Bus Stand', 0), ('Railway Station', 15), ('Sendurai Road', 30)],
     'Chengalpattu': [('New Bus Stand', 0), ('Railway Station', 10), ('GST Road', 20)],
@@ -55,6 +56,7 @@ POPULAR_POINTS = {
     'Hyderabad': [('MGBS', 0), ('Ameerpet', 30), ('Jubilee Bus Station', 60), ('Gachibowli', 90), ('Miyapur', 120)]
 }
 
+# Helper function to calculate estimated time based on base route time and location offset.
 def calculate_point_time(base_time_str, offset_minutes):
     try:
         t = datetime.datetime.strptime(base_time_str, "%I:%M %p")
@@ -198,7 +200,8 @@ def seats(route_id):
         for p in b.passengers:
             booked_seats[p.seat_number] = p.gender
             
-    # Calculate specific times for each point
+    # Calculate specific boarding and dropping times for each location point
+    # using the route's base departure/arrival time and the point's distance-based offset.
     source_points = POPULAR_POINTS.get(route.source, [('Main Bus Stand', 0)])
     dest_points = POPULAR_POINTS.get(route.destination, [('Main Bus Stand', 0)])
     
@@ -242,9 +245,12 @@ def checkout():
             'payment_capture': 1
         }
         
+        # Initialize Razorpay Client and create Order
+        # We wrap this in a try-except to handle potential SSL or network interruptions gracefully.
         try:
             razorpay_order = razorpay_client.order.create(data=order_data)
         except Exception as e:
+            # Log connection error and provide user-friendly feedback
             print(f"Razorpay Connection Error: {str(e)}")
             return jsonify({
                 'success': False, 
