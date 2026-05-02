@@ -52,11 +52,13 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email')
+        email = request.form.get('email', '').lower().strip()
         password = request.form.get('password')
+        remember = True if request.form.get('remember') else False
+        
         user = User.query.filter_by(email=email).first()
         if user and bcrypt.check_password_hash(user.password_hash, password):
-            login_user(user)
+            login_user(user, remember=remember)
             flash('Logged in successfully.', 'success')
             return redirect(url_for('index'))
         else:
@@ -67,11 +69,11 @@ def login():
 def register():
     if request.method == 'POST':
         name = request.form.get('name')
-        email = request.form.get('email')
+        email = request.form.get('email', '').lower().strip()
         password = request.form.get('password')
         
         if User.query.filter_by(email=email).first():
-            flash('Email already registered.', 'error')
+            flash('User already exists. Please login instead.', 'error')
             return redirect(url_for('register'))
             
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -79,7 +81,11 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         
-        login_user(new_user)
+        # Also store in a human-readable log for reference
+        with open('registrations.txt', 'a') as f:
+            f.write(f"Name: {name}, Email: {email}, Registered At: {datetime.datetime.now()}\n")
+        
+        login_user(new_user, remember=True)
         flash('Registration successful!', 'success')
         return redirect(url_for('index'))
     return render_template('register.html')
@@ -257,7 +263,37 @@ def seed_db():
     db.drop_all()
     db.create_all()
     
-    # Create a larger set of buses / travel companies
+    import datetime
+    def add_time(time_str, hours_to_add, minutes_to_add):
+        t = datetime.datetime.strptime(time_str, "%I:%M %p")
+        new_t = t + datetime.timedelta(hours=hours_to_add, minutes=minutes_to_add)
+        return new_t.strftime("%I:%M %p")
+
+    # Coordinates (Approximate Lat, Lon) for all 38 districts + Bengaluru & Hyderabad
+    coords = {
+        'Ariyalur': (11.14, 79.08), 'Chengalpattu': (12.68, 79.98), 'Chennai': (13.08, 80.27),
+        'Coimbatore': (11.01, 76.95), 'Cuddalore': (11.75, 79.77), 'Dharmapuri': (12.13, 78.16),
+        'Dindigul': (10.37, 77.98), 'Erode': (11.34, 77.71), 'Kallakurichi': (11.74, 78.96),
+        'Kancheepuram': (12.83, 79.70), 'Kanyakumari': (8.09, 77.54), 'Karur': (10.96, 78.08),
+        'Krishnagiri': (12.52, 78.21), 'Madurai': (9.92, 78.12), 'Mayiladuthurai': (11.10, 79.65),
+        'Nagapattinam': (10.76, 79.84), 'Namakkal': (11.22, 78.16), 'Nilgiris': (11.41, 76.70),
+        'Perambalur': (11.23, 78.88), 'Pudukkottai': (10.38, 78.82), 'Ramanathapuram': (9.36, 78.83),
+        'Ranipet': (12.92, 79.33), 'Salem': (11.66, 78.14), 'Sivaganga': (9.84, 78.48),
+        'Tenkasi': (8.95, 77.30), 'Thanjavur': (10.78, 79.13), 'Theni': (10.01, 77.47),
+        'Thoothukudi': (8.80, 78.13), 'Tiruchirappalli': (10.79, 78.70), 'Tirunelveli': (8.71, 77.75),
+        'Tirupathur': (12.49, 78.56), 'Tiruppur': (11.10, 77.34), 'Tiruvallur': (13.14, 79.91),
+        'Tiruvannamalai': (12.22, 79.07), 'Tiruvarur': (10.77, 79.64), 'Vellore': (12.91, 79.13),
+        'Viluppuram': (11.94, 79.49), 'Virudhunagar': (9.58, 77.95),
+        'Bengaluru': (12.97, 77.59), 'Hyderabad': (17.38, 78.48)
+    }
+
+    def get_distance(city1, city2):
+        import math
+        c1 = coords.get(city1, (11.0, 78.0))
+        c2 = coords.get(city2, (11.0, 78.0))
+        dist = math.sqrt((c1[0]-c2[0])**2 + (c1[1]-c2[1])**2) * 111
+        return max(50, dist)
+
     travel_companies = [
         'Anand Travels', 'Apex Superfast', 'Arjun Express', 'Arcadia Tours', 'Ashoka Sleeper',
         'Bharat Premium', 'Brindavan Coaches', 'Celestial Travels', 'City Link', 'Cloud Nine Bus',
@@ -269,8 +305,7 @@ def seed_db():
         'New Era Travels', 'Nexus Express', 'Nithyas Travel', 'Noble Coach', 'Oceanic Travels',
         'Pacific Express', 'Phoenix Travels', 'Pioneer Coach', 'Prestige Travels', 'PrimeLine Express',
         'Rajdoot Travels', 'Rivera Coaches', 'Royal Star', 'Sahana Travels', 'Sapphire Express',
-        'Saraswathi Travels',
-        'A1 Travels', 'Kallada Travels', 'SRS Travels', 'VRL Travels', 'Orange Tours',
+        'Saraswathi Travels', 'A1 Travels', 'Kallada Travels', 'SRS Travels', 'VRL Travels', 'Orange Tours',
         'Jabbar Travels', 'KPN Travels', 'Parveen Travels', 'Rathimeena Travels', 'Sharma Transports',
         'Neeta Tours', 'Konduskar Travels', 'Paulo Travels', 'Sangita Travels', 'Saini Travels',
         'Amarnath Travels', 'National Travels', 'IntrCity SmartBus', 'Zingbus', 'NueGo',
@@ -279,117 +314,91 @@ def seed_db():
         'YBM Travels', 'Kallada G4', 'ABT Xpress', 'Universal Travels', 'Praveen Travels',
         'Kalaivani Travels', 'Tippu Sultan Travels', 'Khushi Tourist', 'Humsafar Travels', 'Shree Travels',
         'Mahasagar Travels', 'Eagle Travels', 'Shatabdi Travels', 'Royal Travels', 'Classic Travels',
-        'Vignesh Travels', 'Murugan Travels', 'Kannan Travels', 'Selvam Travels', 'Siva Travels'
+        'Vignesh Travels', 'Murugan Travels', 'Kannan Travels', 'Selvam Travels', 'Siva Travels',
+        'Cauvery Travels', 'Vaigai Express', 'Pothigai Travels', 'Siruvani Express', 'Kumari Travels',
+        'Kovai Superfast', 'Madurai Meenakshi Travels', 'Nellai Express', 'Salem Steel Express',
+        'Rockfort Travels', 'Delta Express', 'Kongu Travels', 'Pandian Express', 'Cheran Travels'
     ]
 
-    bus_types = ['AC Sleeper (2+1)', 'AC Seater (2+2)', 'Non-AC Sleeper (2+1)', 'Volvo Multi-Axle (2+2)', 'Semi-AC Seater (2+2)']
-    buses = []
-    for name in travel_companies:
-        for _ in range(5):
-            buses.append(Bus(
-                company=name,
-                type=random.choice(bus_types),
-                price=random.randint(700, 1800)
-            ))
-
-    db.session.add_all(buses)
-    db.session.commit()
-
-    import datetime
+    bus_types = [
+        ('AC Sleeper (2+1)', 2.5), ('AC Seater (2+2)', 1.8), ('Non-AC Sleeper (2+1)', 1.5), 
+        ('Volvo Multi-Axle (2+2)', 3.0), ('Semi-AC Seater (2+2)', 1.2), ('Premium AC Sleeper', 3.5)
+    ]
+    
     date_options = [
         (datetime.date.today() + datetime.timedelta(days=i)).strftime('%Y-%m-%d')
-        for i in range(1, 16)
+        for i in range(0, 8)
     ]
 
-    # Districts organized by state
-    states = {
-        'Tamil Nadu': [
-            'Ariyalur', 'Chengalpattu', 'Chennai', 'Coimbatore', 'Cuddalore', 'Dharmapuri',
-            'Dindigul', 'Erode', 'Kallakurichi', 'Kancheepuram', 'Kanyakumari', 'Karur', 'Krishnagiri',
-            'Madurai', 'Mayiladuthurai', 'Nagapattinam', 'Namakkal', 'Nilgiris', 'Perambalur',
-            'Pudukkottai', 'Ramanathapuram', 'Ranipet', 'Salem', 'Sivaganga', 'Tenkasi',
-            'Thanjavur', 'Theni', 'Thoothukudi', 'Tiruchirappalli', 'Tirunelveli', 'Tirupathur',
-            'Tiruppur', 'Tiruvallur', 'Tiruvannamalai', 'Tiruvarur', 'Vellore', 'Viluppuram',
-            'Virudhunagar'
-        ],
-        'Karnataka': ['Bengaluru'],
-        'Telangana': ['Hyderabad']
-    }
+    tn_districts = list(coords.keys())
+    tn_districts.remove('Bengaluru')
+    tn_districts.remove('Hyderabad')
+    
+    major_cities = ['Bengaluru', 'Hyderabad']
 
-    times = [
-        ('06:00 AM', '11:00 AM', '5h 00m'), ('08:30 AM', '02:00 PM', '5h 30m'),
-        ('10:00 AM', '04:15 PM', '6h 15m'), ('02:00 PM', '08:30 PM', '6h 30m'),
-        ('05:30 PM', '11:45 PM', '6h 15m'), ('09:00 PM', '05:00 AM', '8h 00m'),
-        ('10:30 PM', '06:00 AM', '7h 30m'), ('11:45 PM', '07:30 AM', '7h 45m')
-    ]
+    morning_times = ['05:00 AM', '06:30 AM', '08:00 AM', '09:30 AM', '11:00 AM']
+    afternoon_times = ['01:30 PM', '03:00 PM', '04:30 PM']
+    night_times = ['08:00 PM', '09:15 PM', '10:30 PM', '11:45 PM']
 
     routes = []
 
-    # Generate route coverage for every distinct Tamil Nadu district pair on several dates
-    tn_districts = states['Tamil Nadu']
-    for src in tn_districts:
-        for dst in tn_districts:
-            if src == dst:
-                continue
-            for date_str in date_options[:2]:
-                ops = random.randint(5, 7)
-                sampled_buses = random.sample(buses, ops)
-                for bus in sampled_buses:
-                    dep, arr, dur = random.choice(times)
-                    routes.append(Route(
-                        source=src, destination=dst, date=date_str,
-                        departure_time=dep, arrival_time=arr, duration=dur, bus_id=bus.id
-                    ))
-
-    # Add Bangalore and Hyderabad routes against all Tamil Nadu districts
-    for city in ['Bengaluru', 'Hyderabad']:
-        for district in tn_districts:
-            for date_str in date_options[:2]:
-                # city to district
-                ops1 = random.randint(5, 7)
-                sampled_buses1 = random.sample(buses, ops1)
-                for bus in sampled_buses1:
-                    dep, arr, dur = random.choice(times)
-                    routes.append(Route(
-                        source=city, destination=district, date=date_str,
-                        departure_time=dep, arrival_time=arr, duration=dur, bus_id=bus.id
-                    ))
-                # district to city
-                ops2 = random.randint(5, 7)
-                sampled_buses2 = random.sample(buses, ops2)
-                for bus in sampled_buses2:
-                    dep, arr, dur = random.choice(times)
-                    routes.append(Route(
-                        source=district, destination=city, date=date_str,
-                        departure_time=dep, arrival_time=arr, duration=dur, bus_id=bus.id
-                    ))
-
-    # Add additional random routes
-    for _ in range(300):
-        state_name, districts = random.choice(list(states.items()))
-        if len(districts) >= 2:
-            src, dst = random.sample(districts, 2)
-        else:
-            src = districts[0]
-            other_states = [items for items in states.items() if items[0] != state_name and items[1]]
-            other_state_name, other_districts = random.choice(other_states)
-            dst = random.choice(other_districts)
-
-        date_str = random.choice(date_options)
-        dep, arr, dur = random.choice(times)
-        bus = random.choice(buses)
-        routes.append(Route(
+    def create_route(src, dst, date_str, dep_time):
+        straight_dist = get_distance(src, dst)
+        # Use a multiplier of 1.4 for road distance and 38 km/h for realistic TN bus speeds
+        road_distance = straight_dist * 1.4
+        
+        bus_name = random.choice(travel_companies)
+        b_type, rate = random.choice(bus_types)
+        
+        price = int(300 + (road_distance * rate))
+        
+        # Calculate duration based on road distance and 38 km/h average speed
+        duration_hours = road_distance / 38
+        h = int(duration_hours)
+        m = int((duration_hours - h) * 60)
+        dur_str = f"{h}h {m}m"
+        
+        # Calculate accurate arrival time
+        arr_time = add_time(dep_time, h, m)
+        
+        bus = Bus(company=bus_name, type=b_type, price=price)
+        db.session.add(bus)
+        db.session.flush()
+        
+        return Route(
             source=src, destination=dst, date=date_str,
-            departure_time=dep, arrival_time=arr, duration=dur, bus_id=bus.id
-        ))
+            departure_time=dep_time, arrival_time=arr_time, duration=dur_str, bus_id=bus.id
+        )
 
-    # Batch insert to handle larger datasets
-    batch_size = 5000
+    # Generate routes
+    for city in major_cities:
+        for district in tn_districts:
+            for date_str in date_options:
+                # 3 Morning + 1 Afternoon + 2 Night = 6 buses
+                all_times = random.sample(morning_times, 3) + [random.choice(afternoon_times)] + random.sample(night_times, 2)
+                for t in all_times:
+                    routes.append(create_route(district, city, date_str, t))
+                    # Bi-directional
+                    routes.append(create_route(city, district, date_str, t))
+
+    # Add key intra-TN routes
+    main_tn = ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem']
+    for src in main_tn:
+        for dst in tn_districts:
+            if src == dst: continue
+            for date_str in date_options[:2]:
+                # 2 Morning + 1 Afternoon + 2 Night = 5 buses
+                all_times = random.sample(morning_times, 2) + [random.choice(afternoon_times)] + random.sample(night_times, 2)
+                for t in all_times:
+                    routes.append(create_route(src, dst, date_str, t))
+                    routes.append(create_route(dst, src, date_str, t))
+
+    batch_size = 1000
     for i in range(0, len(routes), batch_size):
         db.session.add_all(routes[i:i+batch_size])
         db.session.commit()
 
-    return f"Database seeded! Generated {len(routes)} sample routes for Tamil Nadu, Bengaluru, and Hyderabad on multiple dates."
+    return f"Database seeded with {len(routes)} routes! Every route now has at least 5-6 buses with accurate times and synchronized durations."
 
 if __name__ == '__main__':
     with app.app_context():
