@@ -24,7 +24,7 @@ razorpay_client = razorpay.Client(
 )
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'default_secret')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev_secret_key_change_me')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -202,7 +202,7 @@ def checkout():
             'amount': amount_in_paise,
             'booking_id': booking.id,
             'pnr': booking.pnr,
-            'key': os.environ.get('RAZORPAY_KEY_ID', '')
+            'key': RAZORPAY_KEY_ID
         })
 
 @app.route('/payment/verify', methods=['POST'])
